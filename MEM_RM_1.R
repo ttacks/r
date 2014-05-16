@@ -37,6 +37,14 @@ doPlot<-function(sel_name) {
   saveInImageDirectory(filename)
 }
 lapply(unique(data$C), doPlot)
+
+model1 <- lme(y1 ~  block  + y2 + y3 + y4,data=aa, random= list(id = pdSymm(~fblock-1)), method  = 'ML')
+#summary(model1)
+aa$resid <- residuals(model1)
+require(reshape2)
+plotDF <- melt(aa[,c("y2", "y3","y4", "resid")], id="resid")
+ggplot(plotDF, aes(x=value, y=resid)) + 
+  geom_point() + facet_wrap(~ variable)
 #histogram, denna funktion måste skrivas om lite för att kunna ta "allmän" oddball-design!
 cHisto <-function(data.frame, var){
   require(ggplot2)

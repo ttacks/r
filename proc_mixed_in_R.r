@@ -28,8 +28,9 @@ lSymm <- lme(y3 ~  block,data=distr, random= list(id = pdSymm(~fblock-1)), metho
 summary(lSymm)
 
 #testar
-lSymm2 <- lme(y3 ~  block + y1 + y2 + y3 + y4,data=aa, random= list(id = pdSymm(~fblock-1)), method  = 'ML')
+lSymm2 <- lme(y1 ~  block  + y2 + y3 + y4,data=aa, random= list(id = pdSymm(~fblock-1)), method  = 'ML')
 summary(lSymm2)
+ly1=  lme(y1 ~ block,data=aa, random= list(id = pdSymm(~fblock-1)), method  = 'ML')
 
 x.models <- dlply(x.melt, .var = c("variable", "time_point"), .fun = function(x) 
   
