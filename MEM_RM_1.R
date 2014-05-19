@@ -25,7 +25,7 @@ saveInImageDirectory<-function(filename){
 #Doing histograms. En för varje condition.
 doPlot<-function(sel_name) {
   require(ggplot2)
-  dum = subset(data, C == sel_name)
+  dum = subset(data, C == sel_name)         
   
   ggobj = ggplot(data = dum, aes(RT))  + geom_histogram(aes(y=..density..)) + theme_bw() +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
@@ -37,14 +37,17 @@ doPlot<-function(sel_name) {
   saveInImageDirectory(filename)
 }
 lapply(unique(data$C), doPlot)
-
+########
+#Försöker extrahera residualer för att kontrollera normalfördelning
 model1 <- lme(y1 ~  block  + y2 + y3 + y4,data=aa, random= list(id = pdSymm(~fblock-1)), method  = 'ML')
-#summary(model1)
+#summary(model1) 
 aa$resid <- residuals(model1)
 require(reshape2)
 plotDF <- melt(aa[,c("y2", "y3","y4", "resid")], id="resid")
 ggplot(plotDF, aes(x=value, y=resid)) + 
   geom_point() + facet_wrap(~ variable)
+#########
+
 #histogram, denna funktion måste skrivas om lite för att kunna ta "allmän" oddball-design!
 cHisto <-function(data.frame, var){
   require(ggplot2)
@@ -60,8 +63,9 @@ cHisto <-function(data.frame, var){
     facet_wrap(~C + Block) 
 }
 #Q-Q plot
-qqplot <-
-#density plot
+
+#qqplots kan man änvda sig av qplot(sample = data.frame$kolumn.name, stat ="qq")#density plot
+
 density <- ggplot(data, aes(RT))
 density + geom_density() +
   theme_bw() +
@@ -108,6 +112,10 @@ linje + stat_summary(fun.y = mean, geom ="point", aes(fill=C)) +
 require(pastecs)
 require(psych)
 require(rcmdr)
+
+#describe och stat.desc från psych och pastecs respektive kan ge en olika deskriptiv data,
+#cbind verkar vara en bra funktion. I kombination med ovan nämnda funktioner kan man kolla flera variabler
+
 
 #Andy Fields "outlier summary"
 outlierSummary<-function(variable, digits = 2){
