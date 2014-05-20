@@ -48,13 +48,14 @@ habPlot<-function(sel_name) {
     stat_function(fun=dnorm, args = list(mean = mean(dum$RT, na.rm=TRUE), sd = sd(dum$RT, na.rm =TRUE))) +
     #Får bort det under
     scale_y_continuous(expand = c(0,0)) +
+     ggtitle(paste("Histograms", sel_name, sep= " ")) +
     facet_wrap(~Block)
   print(ggobj)
-  filename = sprintf("%s.png", sel_name)
+  filename = paste("Histogram_",sel_name, ".png", sep="")
   saveInImageDirectory(filename)
 }
 lapply(unique(data$C), habPlot)
-########
+################################################################################
 #Försöker extrahera residualer för att kontrollera normalfördelning
 model1 <- lme(y1 ~  block  + y2 + y3 + y4,data=aa, random= list(id = pdSymm(~fblock-1)), method  = 'ML')
 #summary(model1) 
@@ -116,10 +117,15 @@ bar +
 
 #+ facet_wrap(~C) 
 
-#Linjeplot
+#Linjeplot för habituering.
 
 linje <- ggplot(data, aes(Block, RT, fill=C, color=C, shape=C))
-linje + stat_summary(fun.y = mean, geom ="point", aes(fill=C)) +
+linje + stat_summary(fun.y = mean, geom ="point", aes(fill=C)) + theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank() 
+        ,legend.background = element_blank()
+        ,legend.key = element_blank()) +
+  ylab("mean RT (ms)") +
+
   stat_summary(fun.y = mean, geom = "line", aes(fill=C))
 
 
@@ -157,8 +163,8 @@ habDesc<-function(sel_name) { #Denna funktion kör per unik i kolumnn "C". Detta 
     output[i,] <- t(tab)
   }
   r.names <- t(r.names)
-  colnames(output) <- c.names
-  rownames(output) <- r.names
+  colnames(output) <- c.names #Kolumnerna får rubriker
+  rownames(output) <- r.names #Raderna får rubriker
   xyTable <- output
   qplot(1:10, 1:10, geom = "blank") + 
     theme_bw() +
@@ -170,7 +176,7 @@ habDesc<-function(sel_name) { #Denna funktion kör per unik i kolumnn "C". Detta 
                                        gpar.rowtext = gpar(cex = 1.2)),
                       xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) 
   
-  filename = paste(sel_name, ".png", sep="")
+  filename = paste("Descript_",sel_name, ".png", sep="")
   saveInImageDirectory(filename)
 }
 blocks <- length(unique(data$C))
