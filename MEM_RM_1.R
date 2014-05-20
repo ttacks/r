@@ -19,7 +19,7 @@ imageDirectory<-"~/R/Multi-level modeling R (MEM, GMEM)"
 imageDirectory<-file.path(Sys.getenv("HOME"), "R", "Multi-level modeling R (MEM, GMEM)")
 saveInImageDirectory<-function(filename){
   imageFile <- file.path(imageDirectory, filename)
-  ggsave(imageFile)	
+  ggsave(imageFile, width=15, dpi=72)	
 }
 
 #Doing histograms. En för varje condition.
@@ -37,6 +37,23 @@ doPlot<-function(sel_name) {
   saveInImageDirectory(filename)
 }
 lapply(unique(data$C), doPlot)
+
+#Plot för att plotta för varje block (spec för habitueringsstudien)
+habPlot<-function(sel_name) {
+  require(ggplot2)
+  dum = subset(data, C == sel_name)         
+  
+  ggobj = ggplot(data = dum, aes(RT))  + geom_histogram(aes(y=..density..)) + theme_bw() +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    stat_function(fun=dnorm, args = list(mean = mean(dum$RT, na.rm=TRUE), sd = sd(dum$RT, na.rm =TRUE))) +
+    #Får bort det under
+    scale_y_continuous(expand = c(0,0)) +
+    facet_wrap(~Block)
+  print(ggobj)
+  filename = sprintf("%s.png", sel_name)
+  saveInImageDirectory(filename)
+}
+lapply(unique(data$C), habPlot)
 ########
 #Försöker extrahera residualer för att kontrollera normalfördelning
 model1 <- lme(y1 ~  block  + y2 + y3 + y4,data=aa, random= list(id = pdSymm(~fblock-1)), method  = 'ML')
@@ -115,6 +132,50 @@ require(rcmdr)
 
 #describe och stat.desc från psych och pastecs respektive kan ge en olika deskriptiv data,
 #cbind verkar vara en bra funktion. I kombination med ovan nämnda funktioner kan man kolla flera variabler
+#Värden borde vara så nära noll som möjligt annars är de Skewed (kom ihåg vad Johan sa att har man nog många obs. kommer det all
+#id se skevt ut). Vidare kan man konvertera värdena för skew och kurtosis till z-poäng. I små stickprov (vad det nu är)
+#är det ok att kolla efter värden över 1.96 men i stora bör man ändra kriterium till 2.58.
+
+#round kan användas för att avrunda siffror så vi år mindre decimaler! det anger man "digits"
+#round(stat.desc(data.frame[, c("row1", "row2", "etc")], basic = FALSE, norm =TRUE), digits=3)
+habDesc<-function(sel_name) { #Denna funktion kör per unik i kolumnn "C". Detta kan ändras i lapply under
+  require(pastecs)
+  require(OIdata)
+  require(gridExtra)
+  require(ggplot2)
+  output<- matrix(ncol=13, nrow=blocks)
+  r.names <- matrix(ncol=1, nrow=blocks)
+  for (i in 1:blocks){
+    assign(paste("subset", i, sep = ""),subset(data, Block == i)) 
+
+    e1 <- get(paste("subset", i, sep=""))
+    dum = subset(e1, C == sel_name) 
+    tab <- round(stat.desc(dum$RT, basic= FALSE, norm=TRUE), digits = 2)
+    c.names <- t(names(tab))
+    r.names[i,] <- paste(sel_name, i, sep="")
+    
+    output[i,] <- t(tab)
+  }
+  r.names <- t(r.names)
+  colnames(output) <- c.names
+  rownames(output) <- r.names
+  xyTable <- output
+  qplot(1:10, 1:10, geom = "blank") + 
+    theme_bw() +
+    theme(line = element_blank(),
+          text = element_blank()) +
+    annotation_custom(grob = tableGrob(xyTable,
+                                       # change font sizes:
+                                       gpar.coltext = gpar(cex = 1.2),
+                                       gpar.rowtext = gpar(cex = 1.2)),
+                      xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) 
+  
+  filename = paste(sel_name, ".png", sep="")
+  saveInImageDirectory(filename)
+}
+blocks <- length(unique(data$C))
+ads <- sapply(unique(data$C), habDesc, simplify="matrix")
+#########################################################
 
 
 #Andy Fields "outlier summary"
